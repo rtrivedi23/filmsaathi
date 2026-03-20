@@ -7,21 +7,22 @@ const path = require('path');
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
-async function groqComplete(messages, options = {}) {
+async function groqComplete(messages, jsonMode = false) {
+  const body = {
+    model: 'llama-3.3-70b-versatile',
+    messages,
+    max_tokens: 2048,
+    temperature: 0.7
+  };
+  if (jsonMode) body.response_format = { type: 'json_object' };
+
   const res = await fetch(GROQ_API_URL, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      messages,
-      max_tokens: 2048,
-      temperature: 0.7,
-      response_format: { type: 'json_object' },
-      ...options
-    })
+    body: JSON.stringify(body)
   });
   if (!res.ok) {
     const err = await res.text();
@@ -40,7 +41,7 @@ const TMDB_BASE = 'https://api.themoviedb.org/3';
 // ─── Debug endpoint ───────────────────────────────────────────────────────────
 app.get('/api/debug', async (req, res) => {
   try {
-    const text = await groqComplete([{ role: 'user', content: 'Say ok only.' }], { max_tokens: 5 });
+    const text = await groqComplete([{ role: 'user', content: 'Say ok only.' }]);
     res.json({ status: 'ok', groq: text, env: !!process.env.GROQ_API_KEY });
   } catch (err) {
     res.json({ status: 'error', message: err.message, env: !!process.env.GROQ_API_KEY });
@@ -86,7 +87,7 @@ Rules:
     const text = await groqComplete([
       { role: 'system', content: 'You are a Bollywood film expert. Respond with valid JSON only — no markdown, no extra text.' },
       { role: 'user', content: prompt }
-    ]);
+    ], true);
 
     const data = JSON.parse(text);
     res.json(data);
