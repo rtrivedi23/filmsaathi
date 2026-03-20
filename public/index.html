@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FilmSaathi — Your Bollywood Match</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Playfair+Display:wght@700;800&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ═══════════════════════════════════════════════════════════
+       DESIGN TOKENS
+    ═══════════════════════════════════════════════════════════ */
+    :root {
+      --bg:           #0C0408;
+      --bg-warm:      #180B10;
+      --bg-card:      #200E16;
+      --gold:         #C8963C;
+      --gold-mid:     #E0B04A;
+      --gold-bright:  #F5C842;
+      --gold-pale:    rgba(200,150,60,0.14);
+      --red:          #9E1922;
+      --red-bright:   #CC2030;
+      --pink:         #B5156A;
+      --cream:        #EDD9B0;
+      --cream-2:      #C4A070;
+      --cream-3:      #7A6040;
+      --border-dim:   rgba(200,150,60,0.18);
+      --border-mid:   rgba(200,150,60,0.45);
+      --border-hi:    rgba(200,150,60,0.85);
+      --shadow-gold:  0 0 30px rgba(200,150,60,0.2);
+      --shadow-glow:  0 0 60px rgba(200,150,60,0.4);
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    html, body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--cream);
+      font-family: 'Nunito', Georgia, sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Ambient background warmth */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 40% at 50% -5%,  rgba(180,30,40,0.14) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 60% at -5% 60%,  rgba(200,150,60,0.07) 0%, transparent 45%),
+        radial-gradient(ellipse 50% 60% at 105% 80%, rgba(181,21,106,0.07) 0%, transparent 45%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* Film grain overlay */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23g)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 9999;
+      mix-blend-mode: overlay; opacity: 0.55;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       LAYOUT
+    ═══════════════════════════════════════════════════════════ */
+    #app {
+      position: relative; z-index: 1;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 20px;
+      min-height: 100vh;
+    }
+
+    .screen { display: none; flex-direction: column; min-height: 100vh; }
+    .screen.active { display: flex; }
+
+    /* ═══════════════════════════════════════════════════════════
+       FILM STRIP
+    ═══════════════════════════════════════════════════════════ */
+    .film-strip {
+      flex-shrink: 0;
+      height: 26px;
+      background: #090306;
+      border-top: 2px solid #1E0E18;
+      border-bottom: 2px solid #1E0E18;
+      background-image: repeating-linear-gradient(
+        90deg,
+        #090306 0px, #090306 13px,
+        #1A0A12 13px, #1A0A12 21px,
+        #090306 21px, #090306 34px
+      );
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       SHARED COMPONENTS
+    ═══════════════════════════════════════════════════════════ */
+    .ornament {
+      text-align: center;
+      color: var(--gold);
+      letter-spacing: 10px;
+      font-size: 11px;
+      opacity: 0.65;
+      padding: 6px 0;
+    }
+
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      margin: 20px 0;
+      opacity: 0.35;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       BUTTONS
+    ═══════════════════════════════════════════════════════════ */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--red) 0%, #6A0E18 100%);
+      color: var(--gold-bright);
+      border: 2px solid var(--gold);
+      font-family: 'Playfair Display', serif;
+      font-size: 15px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      padding: 15px 44px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(158,25,34,0.35), 0 0 40px rgba(200,150,60,0.1);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #C02030 0%, #8A1028 100%);
+      box-shadow: 0 6px 30px rgba(158,25,34,0.55), 0 0 55px rgba(200,150,60,0.25);
+      transform: translateY(-2px);
+    }
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--gold);
+      border: 1px solid var(--border-mid);
+      font-family: 'Playfair Display', serif;
+      font-size: 13px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 12px 26px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .btn-secondary:hover {
+      border-color: var(--gold-bright);
+      color: var(--gold-bright);
+      box-shadow: var(--shadow-gold);
+    }
+    .btn-secondary:disabled {
+      opacity: 0.25;
+      cursor: default;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       LANDING SCREEN
+    ═══════════════════════════════════════════════════════════ */
+    #screen-landing { justify-content: space-between; }
+
+    .landing-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 20px;
+      text-align: center;
+    }
+
+    .app-title {
+      font-family: 'Abril Fatface', serif;
+      font-size: clamp(56px, 15vw, 92px);
+      color: var(--gold-bright);
+      line-height: 1;
+      text-shadow:
+        0 0 60px rgba(245,200,66,0.45),
+        0 0 120px rgba(245,200,66,0.18),
+        4px 4px 0 rgba(158,25,34,0.5);
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+    }
+
+    .app-subtitle {
+      font-family: 'Playfair Display', serif;
+      color: var(--gold);
+      font-size: 13px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      opacity: 0.75;
+      margin-bottom: 6px;
+    }
+
+    .app-tagline {
+      font-style: italic;
+      font-size: 18px;
+      color: var(--cream-2);
+      margin-bottom: 44px;
+      line-height: 1.6;
+    }
+
+    .star-row {
+      display: flex; gap: 14px;
+      align-items: center; justify-content: center;
+      margin: 22px 0 36px;
+      color: var(--gold);
+    }
+    .star-row .lg { font-size: 24px; }
+    .star-row .sm { font-size: 14px; opacity: 0.7; }
+
+    /* ═══════════════════════════════════════════════════════════
+       TRANSITION SCREEN (between person 1 & 2)
+    ═══════════════════════════════════════════════════════════ */
+    #screen-transition {
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 40px;
+    }
+
+    .transition-inner { max-width: 420px; }
+
+    .checkmark-ring {
+      width: 84px; height: 84px;
+      border: 2px solid var(--gold);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 38px;
+      margin: 0 auto 32px;
+      animation: softpulse 2.4s ease-in-out infinite;
+      box-shadow: var(--shadow-gold);
+    }
+    @keyframes softpulse {
+      0%,100% { box-shadow: 0 0 24px rgba(200,150,60,0.25); }
+      50%      { box-shadow: 0 0 56px rgba(200,150,60,0.55); }
+    }
+
+    .transition-title {
+      font-family: 'Abril Fatface', serif;
+      font-size: 38px;
+      color: var(--gold-bright);
+      margin-bottom: 12px;
+    }
+
+    .transition-sub {
+      font-style: italic;
+      color: var(--cream-2);
+      font-size: 16px;
+      line-height: 1.7;
+      margin-bottom: 40px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       QUESTIONS SCREEN
+    ═══════════════════════════════════════════════════════════ */
+    #screen-questions { padding-bottom: 40px; }
+
+    .questions-top { padding: 22px 0 18px; }
+
+    .person-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 5px 16px;
+      border: 1px solid;
+      font-family: 'Playfair Display', serif;
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    .person-badge.p1 { color: var(--gold-bright);  border-color: var(--gold); }
+    .person-badge.p2 { color: #F06090; border-color: rgba(181,21,106,0.6); }
+
+    .progress-dots { display: flex; gap: 10px; margin-bottom: 20px; }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--border-dim);
+      transition: all 0.3s ease;
+    }
+    .dot.active { background: var(--gold-bright); box-shadow: 0 0 8px var(--gold-bright); }
+    .dot.done   { background: var(--gold); }
+
+    .question-card {
+      border: 1px solid var(--border-dim);
+      background: var(--bg-card);
+      padding: 32px;
+      margin-bottom: 22px;
+      position: relative;
+      animation: fadeUp 0.35s ease;
+    }
+    .question-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+
+    .question-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 10px; letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--cream-3);
+      margin-bottom: 10px;
+    }
+
+    .question-text {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(19px, 3.8vw, 25px);
+      color: var(--cream);
+      line-height: 1.35;
+      margin-bottom: 26px;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+      gap: 11px;
+    }
+
+    .option-card {
+      border: 1px solid var(--border-dim);
+      background: rgba(255,255,255,0.02);
+      padding: 18px 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.22s ease;
+      position: relative; overflow: hidden;
+    }
+    .option-card::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, var(--gold-pale), transparent);
+      opacity: 0; transition: opacity 0.22s ease;
+    }
+    .option-card:hover { border-color: var(--border-mid); }
+    .option-card:hover::after { opacity: 0.5; }
+    .option-card.selected {
+      border-color: var(--gold-bright);
+      background: rgba(200,150,60,0.1);
+      box-shadow: 0 0 18px rgba(200,150,60,0.18), inset 0 0 18px rgba(200,150,60,0.05);
+    }
+    .option-card.selected::after { opacity: 1; }
+
+    .opt-icon  { font-size: 28px; display: block; margin-bottom: 8px; }
+    .opt-label { font-size: 13px; font-weight: 700; color: var(--cream); line-height: 1.3; }
+    .option-card.selected .opt-label { color: var(--gold-bright); }
+
+    .question-nav {
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .error-msg {
+      background: rgba(158,25,34,0.18);
+      border: 1px solid rgba(204,32,48,0.5);
+      color: #FF8898;
+      padding: 12px 18px;
+      font-size: 13px;
+      margin-bottom: 14px;
+      display: none;
+    }
+    .error-msg.show { display: block; }
+
+    /* ═══════════════════════════════════════════════════════════
+       LOADING SCREEN
+    ═══════════════════════════════════════════════════════════ */
+    #screen-loading {
+      justify-content: space-between;
+      align-items: stretch;
+    }
+
+    .loading-body {
+      flex: 1;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 40px; text-align: center;
+    }
+
+    .reel {
+      width: 96px; height: 96px;
+      border: 2px solid var(--gold);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 42px;
+      margin: 0 auto 30px;
+      animation: spin 2.2s linear infinite;
+      box-shadow: var(--shadow-gold);
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-title {
+      font-family: 'Abril Fatface', serif;
+      font-size: 30px;
+      color: var(--gold-bright);
+      text-shadow: 0 0 30px rgba(245,200,66,0.3);
+      margin-bottom: 14px;
+    }
+
+    .loading-msg {
+      font-style: italic;
+      color: var(--cream-2);
+      font-size: 15px;
+      min-height: 22px;
+      transition: opacity 0.4s ease;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       RESULTS SCREEN
+    ═══════════════════════════════════════════════════════════ */
+    #screen-results { padding-bottom: 60px; }
+
+    .results-header {
+      text-align: center;
+      padding: 32px 0 20px;
+    }
+
+    .results-title {
+      font-family: 'Abril Fatface', serif;
+      font-size: clamp(34px, 9vw, 56px);
+      color: var(--gold-bright);
+      text-shadow: 0 0 40px rgba(245,200,66,0.28);
+      line-height: 1;
+    }
+
+    .results-sub {
+      font-style: italic;
+      color: var(--cream-2);
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    /* TOP PICK ─────────────────────────────────────────────── */
+    .top-pick-label {
+      text-align: center;
+      font-family: 'Playfair Display', serif;
+      font-size: 12px;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 14px;
+    }
+    .top-pick-label span { margin: 0 6px; }
+
+    .movie-featured {
+      border: 1px solid var(--gold);
+      background: var(--bg-card);
+      position: relative; overflow: hidden;
+      box-shadow: 0 0 55px rgba(200,150,60,0.12), 0 20px 55px rgba(0,0,0,0.45);
+    }
+    .movie-featured::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--red), var(--gold-mid), var(--red));
+    }
+
+    .featured-layout {
+      display: flex;
+    }
+    @media (max-width: 500px) {
+      .featured-layout { flex-direction: column; }
+      .featured-poster-wrap { width: 100% !important; height: 280px; }
+    }
+
+    .featured-poster-wrap {
+      flex-shrink: 0;
+      width: 195px;
+    }
+
+    .feat-poster {
+      width: 100%; height: 100%;
+      min-height: 290px;
+      object-fit: cover; display: block;
+    }
+
+    .feat-poster-placeholder {
+      width: 100%; min-height: 290px;
+      background: linear-gradient(135deg, var(--bg-warm), var(--bg-card));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 56px;
+    }
+
+    .featured-info {
+      flex: 1; padding: 26px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+
+    .feat-title {
+      font-family: 'Abril Fatface', serif;
+      font-size: clamp(22px, 4vw, 29px);
+      color: var(--cream);
+      line-height: 1.2;
+    }
+
+    .meta-row {
+      display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+    }
+    .meta-tag {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border-dim);
+      padding: 3px 9px;
+      font-size: 11px; color: var(--cream-2); letter-spacing: 0.3px;
+    }
+
+    .score-block {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .score-ring {
+      width: 54px; height: 54px;
+      border: 2px solid var(--gold);
+      border-radius: 50%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: rgba(200,150,60,0.09);
+      box-shadow: 0 0 18px rgba(200,150,60,0.18);
+    }
+    .score-num  { font-family: 'Abril Fatface', serif; font-size: 18px; color: var(--gold-bright); line-height: 1; }
+    .score-pct  { font-size: 9px; color: var(--gold); letter-spacing: 1px; }
+    .score-text { font-family: 'Playfair Display', serif; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--cream-2); }
+
+    .tmdb-rating { display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--cream-2); }
+    .star-gold { color: #F5C842; }
+
+    .reason-box {
+      background: rgba(200,150,60,0.07);
+      border-left: 3px solid var(--gold);
+      padding: 10px 14px;
+      font-style: italic; font-size: 14px;
+      color: var(--cream-2); line-height: 1.65;
+    }
+
+    .overview-text {
+      font-size: 13px; color: var(--cream-3);
+      line-height: 1.75;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .streaming-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .streaming-lbl { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--cream-3); }
+    .stream-badge {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.13);
+      padding: 3px 9px; font-size: 11px; color: var(--cream-2);
+    }
+
+    /* ALTERNATIVES ─────────────────────────────────────────── */
+    .alt-section-label {
+      font-family: 'Playfair Display', serif;
+      font-size: 11px; letter-spacing: 5px;
+      text-transform: uppercase; color: var(--cream-3);
+      text-align: center; margin: 8px 0 18px;
+    }
+
+    .alt-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 460px) { .alt-grid { grid-template-columns: 1fr; } }
+
+    .alt-card {
+      border: 1px solid var(--border-dim);
+      background: var(--bg-card);
+      overflow: hidden;
+      transition: all 0.28s ease;
+    }
+    .alt-card:hover {
+      border-color: var(--border-mid);
+      box-shadow: 0 8px 28px rgba(0,0,0,0.4);
+      transform: translateY(-3px);
+    }
+
+    .alt-poster-img {
+      width: 100%; height: 190px;
+      object-fit: cover; display: block;
+    }
+    .alt-poster-ph {
+      width: 100%; height: 190px;
+      background: linear-gradient(135deg, var(--bg-warm), var(--bg-card));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px;
+    }
+
+    .alt-info { padding: 14px; }
+
+    .alt-title {
+      font-family: 'Nunito', sans-serif; font-weight: 600;
+      font-size: 14px; color: var(--cream);
+      line-height: 1.3; margin-bottom: 10px;
+    }
+    .alt-year { font-weight: 400; font-size: 11px; color: var(--cream-3); }
+
+    .alt-score-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .alt-bar { flex: 1; height: 3px; background: var(--border-dim); overflow: hidden; }
+    .alt-bar-fill { height: 100%; background: linear-gradient(90deg, var(--red), var(--gold-mid)); transition: width 1s ease; }
+    .alt-score-n { font-family: 'Abril Fatface', serif; font-size: 14px; color: var(--gold); min-width: 32px; text-align: right; }
+
+    .alt-reason { font-size: 12px; font-style: italic; color: var(--cream-3); line-height: 1.55; }
+
+    .alt-streaming { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
+    .alt-stream-badge {
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border-dim);
+      padding: 2px 7px; font-size: 10px; color: var(--cream-3);
+    }
+
+    /* RESTART ─────────────────────────────────────────────── */
+    .restart-section {
+      text-align: center;
+      margin-top: 48px; padding-top: 28px;
+      border-top: 1px solid var(--border-dim);
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══════════════════════════════════════════════════════════
+       SCREEN: LANDING
+  ══════════════════════════════════════════════════════════ -->
+  <div id="screen-landing" class="screen active">
+    <div class="film-strip"></div>
+
+    <div class="landing-body">
+      <div class="ornament">◆ &nbsp; ◆ &nbsp; ◆</div>
+
+      <h1 class="app-title">FilmSaathi</h1>
+      <p class="app-subtitle">Bollywood Picks for Couples</p>
+      <div class="divider"></div>
+      <p class="app-tagline">Two hearts.&ensp;One perfect film.</p>
+
+      <div class="star-row">
+        <span class="sm">✦</span>
+        <span class="lg">★</span>
+        <span class="sm">✦</span>
+        <span class="lg">★</span>
+        <span class="sm">✦</span>
+      </div>
+
+      <button class="btn-primary" onclick="startApp()">Begin Your Journey</button>
+    </div>
+
+    <div class="film-strip"></div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SCREEN: TRANSITION (between person 1 and 2)
+  ══════════════════════════════════════════════════════════ -->
+  <div id="screen-transition" class="screen">
+    <div class="transition-inner">
+      <div class="checkmark-ring">✓</div>
+      <h2 class="transition-title">Person 1 is done!</h2>
+      <p class="transition-sub">
+        Pass the device to Person 2.<br>
+        Keep your answers secret!
+      </p>
+      <div class="divider"></div>
+      <button class="btn-primary" onclick="startPerson2()">I'm Ready &nbsp;→</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SCREEN: QUESTIONS
+  ══════════════════════════════════════════════════════════ -->
+  <div id="screen-questions" class="screen">
+    <div class="questions-top">
+      <div class="ornament" style="text-align:left;letter-spacing:5px;font-size:10px;">★ &nbsp;✦&nbsp; ★</div>
+      <div id="person-badge" class="person-badge p1">
+        <span id="person-label">Person 1</span>
+      </div>
+      <div class="progress-dots">
+        <div class="dot active" data-i="0"></div>
+        <div class="dot"        data-i="1"></div>
+        <div class="dot"        data-i="2"></div>
+        <div class="dot"        data-i="3"></div>
+        <div class="dot"        data-i="4"></div>
+      </div>
+    </div>
+
+    <div id="question-card" class="question-card"><!-- filled by JS --></div>
+
+    <div class="error-msg" id="error-msg">Please choose an option to continue.</div>
+
+    <div class="question-nav">
+      <button class="btn-secondary" id="btn-prev" onclick="prevQ()">← &nbsp;Back</button>
+      <button class="btn-primary"   id="btn-next" onclick="nextQ()">Next &nbsp;→</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SCREEN: LOADING
+  ══════════════════════════════════════════════════════════ -->
+  <div id="screen-loading" class="screen">
+    <div class="film-strip"></div>
+    <div class="loading-body">
+      <div class="reel">🎬</div>
+      <h2 class="loading-title">Finding your film…</h2>
+      <div class="divider"></div>
+      <p class="loading-msg" id="loading-msg">Consulting the stars of Bollywood…</p>
+    </div>
+    <div class="film-strip"></div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SCREEN: RESULTS
+  ══════════════════════════════════════════════════════════ -->
+  <div id="screen-results" class="screen">
+    <div class="film-strip"></div>
+
+    <div class="results-header">
+      <div class="ornament">◆ &nbsp; ◆ &nbsp; ◆</div>
+      <h2 class="results-title">Your Picks Are In</h2>
+      <p class="results-sub">Matched to both your tastes</p>
+    </div>
+
+    <div id="top-pick-section">
+      <p class="top-pick-label"><span>★</span> TOP PICK <span>★</span></p>
+      <div id="top-pick-card"><!-- filled by JS --></div>
+    </div>
+
+    <div class="divider" style="margin:28px 0;"></div>
+
+    <p class="alt-section-label">Other Great Choices</p>
+    <div class="alt-grid" id="alt-grid"><!-- filled by JS --></div>
+
+    <div class="restart-section">
+      <button class="btn-secondary" onclick="resetApp()">↺ &nbsp; Start Over</button>
+    </div>
+
+    <div class="film-strip" style="margin-top:52px;"></div>
+  </div>
+
+</div><!-- #app -->
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   DATA
+══════════════════════════════════════════════════════════════ */
+const QUESTIONS = [
+  {
+    id: 'genre',
+    text: 'What genre are you in the mood for?',
+    options: [
+      { value: 'Romance',  icon: '💕', label: 'Romance'  },
+      { value: 'Action',   icon: '💥', label: 'Action'   },
+      { value: 'Comedy',   icon: '😄', label: 'Comedy'   },
+      { value: 'Thriller', icon: '🔪', label: 'Thriller' },
+      { value: 'Drama',    icon: '🎭', label: 'Drama'    },
+      { value: 'Family',   icon: '👨‍👩‍👧', label: 'Family'   }
+    ]
+  },
+  {
+    id: 'mood',
+    text: "What's your vibe tonight?",
+    options: [
+      { value: 'Light and fun',          icon: '☀️',  label: 'Light & Fun'    },
+      { value: 'Intense and gripping',   icon: '🌪️', label: 'Intense'        },
+      { value: 'Emotional and moving',   icon: '💧',  label: 'Emotional'      },
+      { value: 'Mindless entertainment', icon: '🍿',  label: 'Mindless Fun'   }
+    ]
+  },
+  {
+    id: 'era',
+    text: 'Which Bollywood era calls to you?',
+    options: [
+      { value: 'Classic 70s-90s', icon: '📽️', label: 'Classic 70s-90s' },
+      { value: 'Early 2000s',     icon: '💿', label: 'Early 2000s'     },
+      { value: 'Modern 2010s+',   icon: '📱', label: 'Modern 2010s+'   },
+      { value: 'Any era',         icon: '⏳', label: 'Any Era'         }
+    ]
+  },
+  {
+    id: 'language',
+    text: 'Language preference?',
+    options: [
+      { value: 'Hindi',                        icon: '🎵', label: 'Hindi'        },
+      { value: 'South Indian (Tamil/Telugu)',  icon: '🥁', label: 'South Indian' },
+      { value: 'Any Bollywood language',       icon: '🌍', label: 'Any Language' }
+    ]
+  },
+  {
+    id: 'runtime',
+    text: 'How long do you want to watch?',
+    options: [
+      { value: 'Under 2 hours', icon: '⚡', label: 'Under 2 hrs' },
+      { value: '2 to 3 hours',  icon: '⏰', label: '2 – 3 Hours' },
+      { value: 'Any length',    icon: '🌙', label: 'Any Length'  }
+    ]
+  }
+];
+
+const LOADING_MSGS = [
+  'Consulting the stars of Bollywood…',
+  'Calculating your masala quotient…',
+  'Finding the perfect plot twist…',
+  'Checking the romance factor…',
+  'Scanning 60 years of cinema…',
+  'Almost there — popcorn ready?'
+];
+
+/* ══════════════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════════════ */
+const state = {
+  person: 1,
+  qIndex: 0,
+  answers: { 1: {}, 2: {} }
+};
+
+/* ══════════════════════════════════════════════════════════════
+   SCREEN NAVIGATION
+══════════════════════════════════════════════════════════════ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function startApp() {
+  state.person = 1;
+  state.qIndex = 0;
+  state.answers = { 1: {}, 2: {} };
+  renderQuestion();
+  showScreen('screen-questions');
+}
+
+function startPerson2() {
+  state.person = 2;
+  state.qIndex = 0;
+  renderQuestion();
+  showScreen('screen-questions');
+}
+
+function resetApp() {
+  showScreen('screen-landing');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   QUESTIONS
+══════════════════════════════════════════════════════════════ */
+function renderQuestion() {
+  const q   = QUESTIONS[state.qIndex];
+  const p   = state.person;
+  const cur = state.answers[p][q.id];
+  const isLast = state.qIndex === QUESTIONS.length - 1;
+
+  // Person badge
+  const badge = document.getElementById('person-badge');
+  badge.className = 'person-badge ' + (p === 1 ? 'p1' : 'p2');
+  document.getElementById('person-label').textContent = `Person ${p}`;
+
+  // Progress dots
+  document.querySelectorAll('.dot').forEach((dot, i) => {
+    dot.classList.remove('active', 'done');
+    if      (i < state.qIndex)  dot.classList.add('done');
+    else if (i === state.qIndex) dot.classList.add('active');
+  });
+
+  // Back / Next button states
+  document.getElementById('btn-prev').disabled = (state.qIndex === 0 && p === 1);
+  document.getElementById('btn-next').textContent =
+    isLast ? (p === 1 ? 'Done \u00a0→' : 'Find Our Film \u00a0→') : 'Next \u00a0→';
+
+  // Question card
+  document.getElementById('question-card').innerHTML = `
+    <p class="question-num">${state.qIndex + 1} of ${QUESTIONS.length}</p>
+    <h2 class="question-text">${q.text}</h2>
+    <div class="options-grid">
+      ${q.options.map(opt => `
+        <div class="option-card ${cur === opt.value ? 'selected' : ''}"
+             onclick="selectOption('${opt.value.replace(/'/g, "\\'")}')">
+          <span class="opt-icon">${opt.icon}</span>
+          <span class="opt-label">${opt.label}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  hideError();
+}
+
+function selectOption(value) {
+  state.answers[state.person][QUESTIONS[state.qIndex].id] = value;
+  renderQuestion();
+}
+
+function prevQ() {
+  hideError();
+  if (state.qIndex > 0) {
+    state.qIndex--;
+    renderQuestion();
+  } else if (state.person === 2) {
+    showScreen('screen-transition');
+  }
+}
+
+async function nextQ() {
+  const q = QUESTIONS[state.qIndex];
+  if (!state.answers[state.person][q.id]) { showError(); return; }
+  hideError();
+
+  if (state.qIndex < QUESTIONS.length - 1) {
+    state.qIndex++;
+    renderQuestion();
+  } else {
+    if (state.person === 1) {
+      showScreen('screen-transition');
+    } else {
+      await getRecommendations();
+    }
+  }
+}
+
+function showError() { document.getElementById('error-msg').classList.add('show'); }
+function hideError() { document.getElementById('error-msg').classList.remove('show'); }
+
+/* ══════════════════════════════════════════════════════════════
+   API CALLS
+══════════════════════════════════════════════════════════════ */
+async function getRecommendations() {
+  showScreen('screen-loading');
+  startLoadingMsgs();
+
+  try {
+    // Step 1 — get movie suggestions from Claude
+    const suggestRes = await fetch('/api/suggest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ person1: state.answers[1], person2: state.answers[2] })
+    });
+    if (!suggestRes.ok) {
+      const err = await suggestRes.json();
+      throw new Error(err.error || 'Suggestion request failed');
+    }
+    const { recommendations } = await suggestRes.json();
+
+    // Step 2 — enrich with TMDB data
+    const moviesRes = await fetch('/api/movies', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ movies: recommendations })
+    });
+    if (!moviesRes.ok) {
+      const err = await moviesRes.json();
+      throw new Error(err.error || 'Movie details request failed');
+    }
+    const { movies } = await moviesRes.json();
+
+    stopLoadingMsgs();
+    renderResults(movies);
+    showScreen('screen-results');
+
+  } catch (err) {
+    stopLoadingMsgs();
+    alert('Something went wrong:\n\n' + err.message + '\n\nCheck your .env API keys and try again.');
+    showScreen('screen-landing');
+  }
+}
+
+let _loadingInterval;
+function startLoadingMsgs() {
+  let i = 0;
+  const el = document.getElementById('loading-msg');
+  el.textContent = LOADING_MSGS[0];
+  _loadingInterval = setInterval(() => {
+    el.style.opacity = '0';
+    setTimeout(() => {
+      i = (i + 1) % LOADING_MSGS.length;
+      el.textContent = LOADING_MSGS[i];
+      el.style.opacity = '1';
+    }, 400);
+  }, 2600);
+}
+function stopLoadingMsgs() { clearInterval(_loadingInterval); }
+
+/* ══════════════════════════════════════════════════════════════
+   RENDER RESULTS
+══════════════════════════════════════════════════════════════ */
+function renderResults(movies) {
+  const [top, ...alts] = movies;
+
+  document.getElementById('top-pick-card').innerHTML = featuredCardHTML(top);
+  document.getElementById('alt-grid').innerHTML      = alts.map(altCardHTML).join('');
+
+  // Animate score bars after DOM paints
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.alt-bar-fill').forEach(bar => {
+      bar.style.width = (bar.dataset.pct || 70) + '%';
+    });
+  });
+}
+
+function featuredCardHTML(m) {
+  const posterHTML = m.poster
+    ? `<img class="feat-poster" src="${m.poster}" alt="${esc(m.title)}"
+           onerror="this.outerHTML='<div class=feat-poster-placeholder>🎬</div>'">`
+    : `<div class="feat-poster-placeholder">🎬</div>`;
+
+  const metaTags = [
+    m.year    ? `<span class="meta-tag">${m.year}</span>`        : '',
+    m.runtime ? `<span class="meta-tag">${m.runtime} min</span>` : '',
+    ...(m.genres?.slice(0,3).map(g => `<span class="meta-tag">${g}</span>`) || [])
+  ].join('');
+
+  const ratingHTML = m.rating
+    ? `<div class="tmdb-rating"><span class="star-gold">★</span> ${m.rating} / 10</div>` : '';
+
+  const streamHTML = m.streaming?.length
+    ? `<div class="streaming-row">
+         <span class="streaming-lbl">Available on</span>
+         ${m.streaming.slice(0,3).map(s => `<span class="stream-badge">${s}</span>`).join('')}
+       </div>` : '';
+
+  const overviewHTML = m.overview
+    ? `<p class="overview-text">${esc(m.overview)}</p>` : '';
+
+  return `
+    <div class="movie-featured">
+      <div class="featured-layout">
+        <div class="featured-poster-wrap">${posterHTML}</div>
+        <div class="featured-info">
+          <h3 class="feat-title">${esc(m.title)}</h3>
+          <div class="meta-row">${metaTags}</div>
+          <div class="score-block">
+            <div class="score-ring">
+              <span class="score-num">${m.score}</span>
+              <span class="score-pct">MATCH</span>
+            </div>
+            <span class="score-text">Match Score</span>
+          </div>
+          ${ratingHTML}
+          <div class="reason-box">"${esc(m.reason)}"</div>
+          ${overviewHTML}
+          ${streamHTML}
+        </div>
+      </div>
+    </div>`;
+}
+
+function altCardHTML(m) {
+  const pct = m.score || 70;
+
+  const posterHTML = m.poster
+    ? `<img class="alt-poster-img" src="${m.poster}" alt="${esc(m.title)}"
+           onerror="this.outerHTML='<div class=alt-poster-ph>🎬</div>'">`
+    : `<div class="alt-poster-ph">🎬</div>`;
+
+  const streamHTML = m.streaming?.length
+    ? `<div class="alt-streaming">
+         ${m.streaming.slice(0,2).map(s => `<span class="alt-stream-badge">${s}</span>`).join('')}
+       </div>` : '';
+
+  return `
+    <div class="alt-card">
+      ${posterHTML}
+      <div class="alt-info">
+        <div class="alt-title">
+          ${esc(m.title)}
+          ${m.year ? `<span class="alt-year">(${m.year})</span>` : ''}
+        </div>
+        <div class="alt-score-row">
+          <div class="alt-bar">
+            <div class="alt-bar-fill" data-pct="${pct}" style="width:0%"></div>
+          </div>
+          <span class="alt-score-n">${pct}</span>
+        </div>
+        <p class="alt-reason">${esc(m.reason)}</p>
+        ${streamHTML}
+      </div>
+    </div>`;
+}
+
+// Simple HTML escape to prevent XSS from API data
+function esc(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>
