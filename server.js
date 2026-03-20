@@ -12,6 +12,21 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const TMDB_BASE = 'https://api.themoviedb.org/3';
 
+// ─── Debug endpoint ───────────────────────────────────────────────────────────
+app.get('/api/debug', async (req, res) => {
+  try {
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: 'Say "ok" only.' }],
+      max_tokens: 5
+    });
+    res.json({ status: 'ok', groq: completion.choices[0].message.content, env: !!process.env.GROQ_API_KEY });
+  } catch (err) {
+    res.json({ status: 'error', message: err.message, stack: err.stack?.slice(0, 300), env: !!process.env.GROQ_API_KEY });
+  }
+});
+
 // ─── Groq: Suggest 5 movies ───────────────────────────────────────────────────
 app.post('/api/suggest', async (req, res) => {
   try {
