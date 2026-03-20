@@ -204,8 +204,13 @@ async function fetchWikipediaPoster(title, year) {
   return null;
 }
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`\n🎬  FilmSaathi is running!`);
-  console.log(`    Open → http://localhost:${PORT}\n`);
-});
+// Local dev server
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`\n🎬  FilmSaathi is running!`);
+    console.log(`    Open → http://localhost:${PORT}\n`);
+  });
+}
+
+module.exports = app;
