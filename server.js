@@ -3,8 +3,33 @@
 
 require('dotenv').config();
 const express = require('express');
-const Groq = require('groq-sdk');
 const path = require('path');
+
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+
+async function groqComplete(messages, options = {}) {
+  const res = await fetch(GROQ_API_URL, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages,
+      max_tokens: 2048,
+      temperature: 0.7,
+      response_format: { type: 'json_object' },
+      ...options
+    })
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Groq API error ${res.status}: ${err}`);
+  }
+  const data = await res.json();
+  return data.choices[0].message.content;
+}
 
 const app = express();
 app.use(express.json());
@@ -15,15 +40,10 @@ const TMDB_BASE = 'https://api.themoviedb.org/3';
 // ─── Debug endpoint ───────────────────────────────────────────────────────────
 app.get('/api/debug', async (req, res) => {
   try {
-    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-    const completion = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
-      messages: [{ role: 'user', content: 'Say "ok" only.' }],
-      max_tokens: 5
-    });
-    res.json({ status: 'ok', groq: completion.choices[0].message.content, env: !!process.env.GROQ_API_KEY });
+    const text = await groqComplete([{ role: 'user', content: 'Say ok only.' }], { max_tokens: 5 });
+    res.json({ status: 'ok', groq: text, env: !!process.env.GROQ_API_KEY });
   } catch (err) {
-    res.json({ status: 'error', message: err.message, stack: err.stack?.slice(0, 300), env: !!process.env.GROQ_API_KEY });
+    res.json({ status: 'error', message: err.message, env: !!process.env.GROQ_API_KEY });
   }
 });
 
@@ -35,8 +55,6 @@ app.post('/api/suggest', async (req, res) => {
     if (!process.env.GROQ_API_KEY) {
       return res.status(500).json({ error: 'GROQ_API_KEY is not set in .env' });
     }
-
-    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
     const prompt = `You are a Bollywood film expert recommending movies for a couple with different tastes.
 
@@ -65,22 +83,10 @@ Rules:
 - Only real, widely-known Bollywood films
 - Keep each reason under 12 words, no special characters or quotes inside reason`;
 
-    const completion = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a Bollywood film expert. You always respond with valid JSON only — no markdown, no extra text, no explanation.'
-        },
-        { role: 'user', content: prompt }
-      ],
-      max_tokens: 2048,
-      temperature: 0.7,
-      response_format: { type: 'json_object' }
-    });
-
-    const text = completion.choices[0].message.content.trim();
-    console.log('📦 Groq raw response:', text.slice(0, 200));
+    const text = await groqComplete([
+      { role: 'system', content: 'You are a Bollywood film expert. Respond with valid JSON only — no markdown, no extra text.' },
+      { role: 'user', content: prompt }
+    ]);
 
     const data = JSON.parse(text);
     res.json(data);
